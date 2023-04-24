@@ -11,61 +11,50 @@ from pyro.infer import SVI, Trace_ELBO
 from pyro.optim import Adam
 
 
-class Decoder(nn.Module):
-    def __init__(self, z_dim, hidden_dim):
+class Encoder(nn.Module):
+    def __init__(self, input_dim, z_dim, hidden_dim):
         super().__init__()
-        # setup the two linear transformations used
-        self.fc1 = nn.Linear(z_dim, hidden_dim)
-        self.fc21 = nn.Linear(hidden_dim, 784)
-        # setup the non-linearities
-        self.softplus = nn.Softplus()
+        self.model = nn.Sequential(nn.Linear(input_dim, hidden_dim),
+						           nn.ReLU(),
+						           nn.Linear(hidden_dim, hidden_dim),
+						           nn.ReLU()
+        						  )
+
+        self.fc_mean = nn.Linear(hidden_dim, z_dim)
+        self.fc_cov = nn.Linear(hidden_dim, z_dim)
+
+    def forward(self, x):
+        hidden = self.model(x)
+        z_mean = self.fc_mean(hidden) # means
+        z_scale = torch.exp(self.fc_cov(hidden)) # square root covariances
+        return z_mean, z_scale
+
+
+class Decoder(nn.Module):
+    def __init__(self, output_dim, z_dim, hidden_dim):
+        super().__init__()
+	    self.model = nn.Sequential(nn.Linear(z_dim, hidden_dim),
+						           nn.ReLU(),
+						           nn.Linear(hidden_dim, hidden_dim),
+						           nn.ReLU(),
+						           nn.Linear(hidden_dim, output_dim)
+								  )
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, z):
-        # define the forward computation on the latent z
-        # first compute the hidden units
-        hidden = self.softplus(self.fc1(z))
-        # return the parameter for the output Bernoulli
-        # each is of size batch_size x 784
-        loc_img = self.sigmoid(self.fc21(hidden))
-        return loc_img
-
-
-class Encoder(nn.Module):
-    def __init__(self, z_dim, hidden_dim):
-        super().__init__()
-        # setup the three linear transformations used
-        self.fc1 = nn.Linear(784, hidden_dim)
-        self.fc21 = nn.Linear(hidden_dim, z_dim)
-        self.fc22 = nn.Linear(hidden_dim, z_dim)
-        # setup the non-linearities
-        self.softplus = nn.Softplus()
-
-    def forward(self, x):
-        # define the forward computation on the image x
-        # first shape the mini-batch to have pixels in the rightmost dimension
-        x = x.reshape(-1, 784)
-        # then compute the hidden units
-        hidden = self.softplus(self.fc1(x))
-        # then return a mean vector and a (positive) square root covariance
-        # each of size batch_size x z_dim
-        z_loc = self.fc21(hidden)
-        z_scale = torch.exp(self.fc22(hidden))
-        return z_loc, z_scale
+        hidden = self.model(z)
+        output = self.sigmoid(hidden) 
+        return output
 
 
  class VAE(nn.Module):
-    # by default our latent space is 50-dimensional
-    # and we use 400 hidden units
-    def __init__(self, z_dim=50, hidden_dim=400, use_cuda=False):
+    def __init__(self, z_dim=2, hidden_dim=48, use_cuda=True):
         super().__init__()
         # create the encoder and decoder networks
         self.encoder = Encoder(z_dim, hidden_dim)
         self.decoder = Decoder(z_dim, hidden_dim)
 
         if use_cuda:
-            # calling cuda() here will put all the parameters of
-            # the encoder and decoder networks into gpu memory
             self.cuda()
         self.use_cuda = use_cuda
         self.z_dim = z_dim
@@ -104,3 +93,4 @@ class Encoder(nn.Module):
         # decode the image (note we don't sample in image space)
         loc_img = self.decoder(z)
         return loc_img
+
