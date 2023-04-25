@@ -3,38 +3,35 @@ author: lguan (at) mit (dot) edu
 ref: https://pyro.ai/examples/vae.html
 
 
-Implements variational autoencoder for protein condensate + 
-small molecule interaction data.
+Implements variational autoencoder for protein condensate 
+and small molecule interaction data.
 
 """
 
-import os
-
-import numpy as np
 import torch
-import torch.nn as nn
-import torchvision.transforms as transforms
+from torch import nn
 
 import pyro
 import pyro.distributions as dist
-from pyro.infer import SVI, Trace_ELBO
-from pyro.optim import Adam
 
 
 class Encoder(nn.Module):
+    """
+    Encoder class for VAE.
+    """
     def __init__(self, input_dim, z_dim, hidden_dim):
         super().__init__()
         self.model = nn.Sequential(nn.Linear(input_dim, hidden_dim),
-						           nn.ReLU(),
-						           nn.Linear(hidden_dim, hidden_dim),
-						           nn.ReLU()
-        						  )
+                                   nn.ReLU(),
+                                   nn.Linear(hidden_dim, hidden_dim),
+                                   nn.ReLU()
+                                  )
 
         self.fc_mean = nn.Linear(hidden_dim, z_dim)
         self.fc_cov = nn.Linear(hidden_dim, z_dim)
 
     def forward(self, x):
-    	# Outputs latent Gaussians
+        # Outputs latent Gaussians
         hidden = self.model(x)
         z_mean = self.fc_mean(hidden) # means
         z_scale = torch.exp(self.fc_cov(hidden)) # square root covariances
@@ -42,40 +39,48 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
+    """
+    Decoder class for VAE.
+    """
     def __init__(self, output_dim, z_dim, hidden_dim):
         super().__init__()
-	    self.model = nn.Sequential(nn.Linear(z_dim, hidden_dim),
-						           nn.ReLU(),
-						           nn.Linear(hidden_dim, hidden_dim),
-						           nn.ReLU()
-        						  )
-
-        self.fc_mean = nn.Linear(hidden_dim, output_dim)
-        self.fc_cov = nn.Linear(hidden_dim, output_dim)
+        self.model = nn.Sequential(nn.Linear(z_dim, hidden_dim),
+                                   nn.ReLU(),
+                                   nn.Linear(hidden_dim, hidden_dim),
+                                   nn.ReLU(),
+                                   nn.Linear(hidden_dim, output_dim)
+                                  )
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, z):
-    	# Outputs Gaussians
         hidden = self.model(z)
-        out_mean = self.fc_mean(hidden) # means
-        out_scale = torch.exp(self.fc_cov(hidden)) # square root covariances
-        return out_mean, out_scale
+        output = self.sigmoid(hidden)
+        return output
 
 
- class VAE(nn.Module):
+class VAE(nn.Module):
+    """
+    VAE model.
+    """
     def __init__(self, input_dim, z_dim=2, hidden_dim=48, use_cuda=True):
         super().__init__()
-        self.encoder = Encoder(input_dim=input_dim, 
-        					   z_dim=z_dim, 
-        					   hidden_dim=hidden_dim)
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.use_cuda = use_cuda
+        self.z_dim = z_dim
 
-        self.decoder = Decoder(output_dim=input_dim, 
-        					   z_dim=z_dim, 
-        					   hidden_dim=hidden_dim)
+        self.encoder = Encoder(input_dim=self.input_dim,
+                               z_dim=self.z_dim,
+                               hidden_dim=self.hidden_dim
+                              )
+
+        self.decoder = Decoder(output_dim=self.input_dim,
+                               z_dim=self.z_dim,
+                               hidden_dim=self.hidden_dim
+                              )
 
         if use_cuda and torch.cuda.is_available():
             self.cuda()
-        self.use_cuda = use_cuda
-        self.z_dim = z_dim
 
     # define the model, p(x|z)p(z)
     def model(self, x):
@@ -89,13 +94,13 @@ class Decoder(nn.Module):
             z = pyro.sample("latent", dist.Normal(z_loc, z_scale).to_event(1))
 
             # decode latent z
-            decoded_mean, decoded_scale = self.decoder(z)
+            decoded = self.decoder(z)
 
             # score against actual data
-            pyro.sample("obs", 
-            			dist.Normal(decoded_mean, decoded_scale).to_event(1), 
-            			obs=x.reshape(-1, self.input_dim)
-            		   )
+            pyro.sample("obs",
+                        dist.Bernoulli(decoded).to_event(1),
+                        obs=x.reshape(-1, self.input_dim)
+                       )
 
     # define the guide, q(z|x)
     def guide(self, x):
@@ -106,7 +111,7 @@ class Decoder(nn.Module):
             # sample the latent code z
             pyro.sample("latent", dist.Normal(z_loc, z_scale).to_event(1))
 
-    def reconstruct_data(self, x):
+    def forward(self, x):
         z_loc, z_scale = self.encoder(x)
 
         # sample in latent space
@@ -114,4 +119,3 @@ class Decoder(nn.Module):
 
         decoded_mean, decoded_scale = self.decoder(z)
         return decoded_mean, decoded_scale
-
