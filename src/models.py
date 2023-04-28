@@ -62,7 +62,7 @@ class VAE(nn.Module):
     """
     VAE model.
     """
-    def __init__(self, input_dim, z_dim=2, hidden_dim=48, use_cuda=True):
+    def __init__(self, input_dim, z_dim=16, hidden_dim=48, use_cuda=True):
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -98,7 +98,7 @@ class VAE(nn.Module):
 
             # score against actual data
             pyro.sample("obs",
-                        dist.Bernoulli(decoded).to_event(1),
+                        dist.Bernoulli(decoded, validate_args=False).to_event(1),
                         obs=x.reshape(-1, self.input_dim)
                        )
 
@@ -117,5 +117,4 @@ class VAE(nn.Module):
         # sample in latent space
         z = dist.Normal(z_loc, z_scale).sample()
 
-        decoded_mean, decoded_scale = self.decoder(z)
-        return decoded_mean, decoded_scale
+        return self.decoder(z)
