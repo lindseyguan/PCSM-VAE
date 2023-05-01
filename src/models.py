@@ -24,7 +24,11 @@ class Encoder(nn.Module):
         self.model = nn.Sequential(nn.Linear(input_dim, hidden_dim),
                                    nn.ReLU(),
                                    nn.Linear(hidden_dim, hidden_dim),
-                                   nn.ReLU()
+                                   nn.ReLU(),
+                                   nn.Linear(hidden_dim, hidden_dim),
+                                   nn.ReLU(),
+                                   nn.Linear(hidden_dim, hidden_dim),
+                                   nn.ReLU(),
                                   )
 
         self.fc_mean = nn.Linear(hidden_dim, z_dim)
@@ -48,6 +52,10 @@ class Decoder(nn.Module):
                                    nn.ReLU(),
                                    nn.Linear(hidden_dim, hidden_dim),
                                    nn.ReLU(),
+                                   nn.Linear(hidden_dim, hidden_dim),
+                                   nn.ReLU(),
+                                   nn.Linear(hidden_dim, hidden_dim),
+                                   nn.ReLU(),
                                    nn.Linear(hidden_dim, output_dim)
                                   )
         self.sigmoid = nn.Sigmoid()
@@ -62,7 +70,7 @@ class VAE(nn.Module):
     """
     VAE model.
     """
-    def __init__(self, input_dim, z_dim=16, hidden_dim=48, use_cuda=True):
+    def __init__(self, input_dim, z_dim=2, hidden_dim=128, use_cuda=True):
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
