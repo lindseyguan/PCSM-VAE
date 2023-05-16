@@ -22,7 +22,7 @@ In train.py,
 1. update `DATA_DIR` and `MODEL_DIR` to be compatible with your directory setup.
 2. run `python train.py --input_dim 239 --z_dim 16 --hidden_dim 64` or whatever your desired dimensions are.
 
-If you'd like to use a slurm submission script (particularly with MIT's SuperCloud), edit the `llsub.sh` file and try running `LLsub llsub.sh -g volta:1`.
+If you'd like to use a slurm submission script (particularly with MIT's SuperCloud), edit the `llsub.sh` file and try running `LLsub llsub.sh -g volta:1`. If you are using a conda environment, change the name (mine is called `pcsm`).
 
 ## Evaluation
 
