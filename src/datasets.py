@@ -13,10 +13,9 @@ import pandas as pd
 from torch.utils.data import Dataset
 
 class InteractionDataset(Dataset):
-    def __init__(self, file_path, transform=None):
-        self.data = pd.read_csv(file_path,
-                                index_col=0
-                               )
+    def __init__(self, file_path, transform=None, label_col='protein'):
+        self.data = pd.read_csv(file_path).drop(columns=[label_col])
+        self.labels = pd.read_csv(file_path)[label_col].values
         self.transform = transform
 
     def __len__(self):
@@ -24,6 +23,7 @@ class InteractionDataset(Dataset):
 
     def __getitem__(self, idx):
         item = self.data.iloc[idx]
+        label = self.labels[idx]
         if self.transform:
             item = self.transform(item)
-        return item.to_numpy().astype('float32')
+        return item.to_numpy().astype('float32'), label
