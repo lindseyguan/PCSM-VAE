@@ -1,8 +1,8 @@
 ![Latent embedding example](example.png)
 
-# VAE to encode protein condensate + small molecule trajectory data
+# a simple vae to encode protein condensate + small molecule trajectory data
 
-## Requirements
+## requirements
 - numpy
 - pandas
 - tqdm
@@ -12,11 +12,11 @@
 - pyro
 - seaborn
 
-## Data format
+## data format
 
 Data format is expected to be a csv with each row as a datapoint. If your data has a label column and you'd like to exclude it from the representation, pass in `label_col=NAME_OF_COL` to the `InteractionDataset` initialization in `trainer.py`. The default `label_col` is `protein`.
 
-## Training
+## training
 
 In train.py, 
 1. update `DATA_DIR` and `MODEL_DIR` to be compatible with your directory setup.
@@ -24,6 +24,6 @@ In train.py,
 
 If you'd like to use a slurm submission script (particularly with MIT's SuperCloud), edit the `llsub.sh` file and try running `LLsub llsub.sh -g volta:1`. If you are using a conda environment, change the name (mine is called `pcsm`).
 
-## Evaluation
+## evaluation
 
 An example of running evaluation is included in `llsub.sh`.

@@ -25,7 +25,8 @@ from datasets import InteractionDataset
 
 import seaborn as sns
 
-DATA_DIR = '/home/gridsan/lguan/zhang/PCSM-VAE/data'
+INPUT_DIR = '/home/gridsan/lguan/zhang/PCSM-VAE/data/inputs'
+OUTPUT_DIR = '/home/gridsan/lguan/zhang/PCSM-VAE/data/outputs'
 MODEL_DIR = '/home/gridsan/lguan/zhang/PCSM-VAE/models'
 
 def evaluate(test_path, model_path, use_cuda=False, jaccard=False):
@@ -129,7 +130,7 @@ if __name__ == "__main__":
 
     args = vars(parser.parse_args())
 
-    output_dict = evaluate(test_path=os.path.join(DATA_DIR, args['val_data']), 
+    output_dict = evaluate(test_path=os.path.join(INPUT_DIR, args['val_data']), 
                            model_path=os.path.join(MODEL_DIR, args['model']), 
                            jaccard=False)
 
@@ -138,4 +139,4 @@ if __name__ == "__main__":
     df['z'] = pd.Series(output_dict['z'].tolist())
 
     output_name = f'vae_output_{args["val_data"]}.pkl'
-    df.to_pickle(os.path.join(DATA_DIR, output_name))
+    df.to_pickle(os.path.join(OUTPUT_DIR, output_name))

@@ -11,7 +11,7 @@ module load anaconda
 conda deactivate
 conda activate pcsm
 
-python trainer.py --train_data train_clean.csv  \
+python trainer.py --train_data train_clean.csv \
 				  --val_data val_clean.csv  \
 				  --input_dim 239  \
 				  --z_dim 16  \

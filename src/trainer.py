@@ -32,7 +32,7 @@ from models import VAE
 from datasets import InteractionDataset
 
 
-DATA_DIR = '/home/gridsan/lguan/zhang/PCSM-VAE/data'
+DATA_DIR = '/home/gridsan/lguan/zhang/PCSM-VAE/data/inputs'
 MODEL_DIR = '/home/gridsan/lguan/zhang/PCSM-VAE/models'
 
 
@@ -165,6 +165,7 @@ if __name__ == "__main__":
                                  hidden_dim=args['hidden_dim'],
                                  num_epochs=args['num_epochs'],
                                  batch_size=args['batch_size'],
+                                 name=args['name']
                                 )
 
     print('train loss:', train_loss)
